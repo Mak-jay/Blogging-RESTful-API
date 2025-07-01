@@ -14,7 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/blog/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     @Autowired
