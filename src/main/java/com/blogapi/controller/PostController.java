@@ -1,37 +1,36 @@
 package com.blogapi.controller;
 
 import com.blogapi.model.Post;
+import com.blogapi.payload.PostRequest;
+import com.blogapi.payload.PostResponse;
 import com.blogapi.service.PostService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
-@RequestMapping("/posts")
+@RestController
+@RequestMapping("/blog/posts")
 public class PostController {
 
     @Autowired
     private PostService postService;
 
-    @GetMapping("/test")
-    public ResponseEntity<String> testAccess() {
-        return ResponseEntity.ok("You have accessed");
+
+    @PostMapping
+    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest postRequest) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(postService.createPost(postRequest));
     }
 
-
-    @GetMapping
-    public ResponseEntity<List<Post>> getAllPosts()
+    @GetMapping("/all")
+    public ResponseEntity<List<PostResponse>> getAllPosts()
     {
-        List<Post> allPosts = postService.getAllPosts();
-        return ResponseEntity.ok(allPosts);
+        return ResponseEntity.ok(postService.getAllPosts());
     }
-//    @PostMapping
-//    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest postRequest) {
-//        return ResponseEntity.status(HttpStatus.CREATED).body(postService.createPost(postRequest));
-//    }
+
 
 }

@@ -8,7 +8,7 @@ public record PostResponse(
         String title,
         String slug,
         String content,
-        boolean published,
+        Boolean published,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         String authorName,

@@ -13,6 +13,9 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,22 +35,24 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable()); // Optional for testing, required if using Postman etc.
 
         http.authorizeHttpRequests(auth -> auth
-                // 1. Allow all /auth/** endpoints without authentication
                 .requestMatchers("/blog/auth/**").permitAll()
 
-                // 2. Allow USERs to GET posts and access all comments
-                .requestMatchers(HttpMethod.GET, "/blog/posts/**").hasRole("USER")
-                .requestMatchers("/blog/comments/**").hasRole("USER")
+                // Public GETs (all authenticated users)
+                .requestMatchers(HttpMethod.GET, "/blog/posts/**", "/blog/comments/**")
+                .hasAnyRole("USER", "AUTHOR", "ADMIN")
 
-                // 3. Allow AUTHOR full access to posts and comments
-                .requestMatchers("/blog/posts/**", "/blog/comments/**").hasRole("AUTHOR")
+                // Post creation and updates – only Author & Admin
+                .requestMatchers(HttpMethod.POST, "/blog/posts/**").hasAnyRole("AUTHOR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/blog/posts/**").hasAnyRole("AUTHOR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/blog/posts/**").hasAnyRole("AUTHOR", "ADMIN")
 
-                // 4. Allow ADMINs access to anything under /blog/**
+                // Admin access to other critical /blog endpoints
                 .requestMatchers("/blog/**").hasRole("ADMIN")
 
-                // 5. Require authentication for everything else
+                // Everything else must be authenticated
                 .anyRequest().authenticated()
         );
+
 
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -72,5 +77,24 @@ public class SecurityConfig {
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
 
         return new ProviderManager(daoAuthenticationProvider);
+    }
+
+    //helper method
+    public static String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof UserDetails userDetails) {
+            return userDetails.getUsername();  // This is typically the email or username
+        } else if (principal instanceof String username) {
+            return username; // In case of anonymous or string-based principal
+        }
+
+        return null;
     }
 }

@@ -2,6 +2,8 @@ package com.blogapi.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -20,5 +22,5 @@ public class Tag {
     private String name;
 
     @ManyToMany(mappedBy = "tags")
-    private Set<Post> posts;
+    private Set<Post> posts = new HashSet<>();
 }

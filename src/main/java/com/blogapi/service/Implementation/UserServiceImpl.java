@@ -6,13 +6,11 @@ import com.blogapi.payload.SignUpRequest;
 import com.blogapi.payload.SignUpResponse;
 import com.blogapi.repository.UserRepository;
 import com.blogapi.service.UserService;
-import org.hibernate.grammars.hql.HqlParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Service
 public class UserServiceImpl implements UserService {
