@@ -7,21 +7,18 @@ import com.blogapi.model.Category;
 import com.blogapi.model.Post;
 import com.blogapi.model.Tag;
 import com.blogapi.model.User;
-import com.blogapi.payload.CategoryResponse;
 import com.blogapi.payload.PostRequest;
 import com.blogapi.payload.PostResponse;
-import com.blogapi.payload.TagResponse;
 import com.blogapi.repository.CategoryRepository;
 import com.blogapi.repository.PostRepository;
 import com.blogapi.repository.TagRepository;
 import com.blogapi.repository.UserRepository;
-import com.blogapi.service.CategoryService;
 import com.blogapi.service.PostService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +34,7 @@ public class PostServiceImpl implements PostService {
     private CategoryRepository categoryRepository;
     @Autowired
     private TagRepository tagRepository;
+
 
     public String generateSlug(String title)
     {
@@ -123,6 +121,56 @@ public class PostServiceImpl implements PostService {
         return mapToResponse(postRepository.save(post));
 
     }
+
+    @Override
+    public PostResponse getPostById(Long id) {
+        Post post = postRepository.findByIdWithDetails(id)
+                .orElseThrow(()-> new ResourceNotFoundException("Post with id "+id+" not found"));
+        return mapToResponse(post);
+    }
+
+
+
+    @Override
+    public PostResponse updatePost(Long postId, PostRequest request) {
+        Post existingPost = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+
+        Category category = categoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+
+        Set<Tag> tags = new HashSet<>(tagRepository.findAllById(request.tagIds()));
+
+
+        existingPost.setTitle(request.title());
+        existingPost.setSlug(generateSlug(request.title())); // Optional: regenerate slug
+        existingPost.setContent(request.content());
+        existingPost.setPublished(request.published());
+        existingPost.setUpdatedAt(LocalDateTime.now());
+        String username = SecurityConfig.getCurrentUsername();
+        User user = userRepository.findByUsername(username)
+                        .orElseThrow(()-> new UserNotFoundException("User "+username+" not found"));
+        existingPost.setCategory(category);
+        existingPost.getTags().clear();
+        existingPost.getTags().addAll(tags);
+        existingPost.setUser(user); // Update if needed, or keep original
+
+        Post updated = postRepository.save(existingPost);
+
+        return mapToResponse(updated);
+    }
+
+    @Override
+    @Transactional
+    public void deletePost(Long id) {
+        Post post = postRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new UserNotFoundException("Post with id " + id + " not found"));
+
+        postRepository.deleteAllByPostId(id);
+        
+        postRepository.delete(post);
+    }
+
 
 
 }

@@ -14,4 +14,9 @@ public interface PostService {
 
     PostResponse createPost(@Valid PostRequest postRequest);
 
+    PostResponse getPostById(Long id);
+
+    PostResponse updatePost(Long id,@Valid PostRequest postRequest);
+
+    void deletePost(Long id);
 }
