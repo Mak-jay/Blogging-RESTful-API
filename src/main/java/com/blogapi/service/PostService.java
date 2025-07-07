@@ -19,4 +19,6 @@ public interface PostService {
     PostResponse updatePost(Long id,@Valid PostRequest postRequest);
 
     void deletePost(Long id);
+
+    PostResponse getPostBySlug(String slugName);
 }

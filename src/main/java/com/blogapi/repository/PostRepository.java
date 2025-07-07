@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,4 +37,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query(value = "DELETE FROM post_tags WHERE post_id = :postId", nativeQuery = true)
     void deleteAllByPostId(@Param("postId") Long postId);
 
+
+    @Query("""
+    SELECT p FROM Post p
+    LEFT JOIN FETCH p.tags
+    LEFT JOIN FETCH p.category
+    LEFT JOIN FETCH p.user
+    WHERE p.slug = :slug""")
+    Optional<Post> findBySlugWithDetails(@Param("slug") String slugName);
 }

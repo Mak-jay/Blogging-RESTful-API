@@ -171,6 +171,12 @@ public class PostServiceImpl implements PostService {
         postRepository.delete(post);
     }
 
+    @Override
+    public PostResponse getPostBySlug(String slugName) {
+        Post post = postRepository.findBySlugWithDetails(slugName)
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
+        return mapToResponse(post);
+    }
 
 
 }

@@ -12,6 +12,8 @@ public class SignUpResponse {
 
     private Long id;
     private String username;
+    private String email;
     private ROLE_TYPE role;
+
 
 }

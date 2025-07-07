@@ -37,6 +37,11 @@ public class PostController {
         return ResponseEntity.ok(postService.getPostById(id));
     }
 
+    @GetMapping("/slug")
+    public ResponseEntity<PostResponse> getPostBySlug(@RequestParam("slug") String slugName){
+        return ResponseEntity.ok(postService.getPostBySlug(slugName));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<PostResponse> updatePost(@PathVariable Long id,@Valid @RequestBody PostRequest postRequest){
         return ResponseEntity.ok(postService.updatePost(id,postRequest));

@@ -33,6 +33,8 @@ public class User implements UserDetails {
     private ROLE_TYPE role;
     private LocalDateTime createdAt;
 
+    private Boolean enable=false;
+
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Post> posts;
