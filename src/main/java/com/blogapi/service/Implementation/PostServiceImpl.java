@@ -2,11 +2,9 @@ package com.blogapi.service.Implementation;
 
 import com.blogapi.config.SecurityConfig;
 import com.blogapi.exception.ResourceNotFoundException;
+import com.blogapi.exception.UnauthorizedException;
 import com.blogapi.exception.UserNotFoundException;
-import com.blogapi.model.Category;
-import com.blogapi.model.Post;
-import com.blogapi.model.Tag;
-import com.blogapi.model.User;
+import com.blogapi.model.*;
 import com.blogapi.payload.PostRequest;
 import com.blogapi.payload.PostResponse;
 import com.blogapi.repository.CategoryRepository;
@@ -15,6 +13,9 @@ import com.blogapi.repository.TagRepository;
 import com.blogapi.repository.UserRepository;
 import com.blogapi.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,15 +106,22 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostResponse createPost(PostRequest postRequest) {
+        String username = SecurityConfig.getCurrentUsername();
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        if (currentUser.getRole() == ROLE_TYPE.AUTHOR && !currentUser.isEnabled()) {
+            throw new UnauthorizedException("Author not approved yet");
+        }
+
         Post post = new Post();
         post.setTitle(postRequest.title());
         post.setSlug(generateSlug(postRequest.title()));
         post.setContent(postRequest.content());
         post.setPublished(postRequest.published());
-        String username = SecurityConfig.getCurrentUsername();
-        User currentUser = userRepository.findByUsername(username)
+        String user = SecurityConfig.getCurrentUsername();
+        User currUser = userRepository.findByUsername(user)
                         .orElseThrow(() -> new UserNotFoundException("User not found"));
-        post.setUser(currentUser);
+        post.setUser(currUser);
         post.setCategory(getCategory(postRequest.categoryId()));
         post.setTags(getTags(postRequest.tagIds()));
 
@@ -142,6 +150,15 @@ public class PostServiceImpl implements PostService {
         Set<Tag> tags = new HashSet<>(tagRepository.findAllById(request.tagIds()));
 
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+
+        if (!existingPost.getUser().getId().equals(currentUser.getId())
+                && !currentUser.getRole().name().equals("ADMIN")) {
+            throw new AccessDeniedException("You are not authorized to update this post.");
+        }
+
+
         existingPost.setTitle(request.title());
         existingPost.setSlug(generateSlug(request.title())); // Optional: regenerate slug
         existingPost.setContent(request.content());
@@ -151,8 +168,9 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findByUsername(username)
                         .orElseThrow(()-> new UserNotFoundException("User "+username+" not found"));
         existingPost.setCategory(category);
-        existingPost.getTags().clear();
-        existingPost.getTags().addAll(tags);
+        Set<Tag> updatedTags = new HashSet<>(tags); // or List, depends on your mapping
+        existingPost.setTags(updatedTags);
+
         existingPost.setUser(user); // Update if needed, or keep original
 
         Post updated = postRepository.save(existingPost);
