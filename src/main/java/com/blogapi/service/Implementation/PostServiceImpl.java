@@ -184,6 +184,14 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new UserNotFoundException("Post with id " + id + " not found"));
 
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = (User) authentication.getPrincipal();
+
+        if (!post.getUser().getId().equals(currentUser.getId())
+                && !currentUser.getRole().name().equals("ADMIN")) {
+            throw new AccessDeniedException("You are not authorized to delete this post.");
+        }
         postRepository.deleteAllByPostId(id);
         
         postRepository.delete(post);
