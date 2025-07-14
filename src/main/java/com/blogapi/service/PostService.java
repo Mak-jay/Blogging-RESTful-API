@@ -1,12 +1,13 @@
 package com.blogapi.service;
 
-import com.blogapi.model.Post;
-import com.blogapi.payload.PostRequest;
-import com.blogapi.payload.PostResponse;
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.blogapi.payload.PostRequest;
+import com.blogapi.payload.PostResponse;
+
+import jakarta.validation.Valid;
 
 @Service
 public interface PostService {
@@ -21,4 +22,6 @@ public interface PostService {
     void deletePost(Long id);
 
     PostResponse getPostBySlug(String slugName);
+
+    Object searchPostsByTitleOrContent(String query);
 }

@@ -1,17 +1,11 @@
 package com.blogapi.service.Implementation;
 
-import com.blogapi.config.SecurityConfig;
-import com.blogapi.exception.ResourceNotFoundException;
-import com.blogapi.exception.UnauthorizedException;
-import com.blogapi.exception.UserNotFoundException;
-import com.blogapi.model.*;
-import com.blogapi.payload.PostRequest;
-import com.blogapi.payload.PostResponse;
-import com.blogapi.repository.CategoryRepository;
-import com.blogapi.repository.PostRepository;
-import com.blogapi.repository.TagRepository;
-import com.blogapi.repository.UserRepository;
-import com.blogapi.service.PostService;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -19,11 +13,22 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.blogapi.config.SecurityConfig;
+import com.blogapi.exception.ResourceNotFoundException;
+import com.blogapi.exception.UnauthorizedException;
+import com.blogapi.exception.UserNotFoundException;
+import com.blogapi.model.Category;
+import com.blogapi.model.Post;
+import com.blogapi.model.ROLE_TYPE;
+import com.blogapi.model.Tag;
+import com.blogapi.model.User;
+import com.blogapi.payload.PostRequest;
+import com.blogapi.payload.PostResponse;
+import com.blogapi.repository.CategoryRepository;
+import com.blogapi.repository.PostRepository;
+import com.blogapi.repository.TagRepository;
+import com.blogapi.repository.UserRepository;
+import com.blogapi.service.PostService;
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -139,6 +144,7 @@ public class PostServiceImpl implements PostService {
 
 
 
+    //Either Author of the post or Admin can delete the posts
     @Override
     public PostResponse updatePost(Long postId, PostRequest request) {
         Post existingPost = postRepository.findById(postId)
@@ -178,6 +184,7 @@ public class PostServiceImpl implements PostService {
         return mapToResponse(updated);
     }
 
+    //Either Author of the post or Admin can delete the posts
     @Override
     @Transactional
     public void deletePost(Long id) {
@@ -202,6 +209,15 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findBySlugWithDetails(slugName)
                 .orElseThrow(() -> new ResourceNotFoundException("Post not found"));
         return mapToResponse(post);
+    }
+    @Override
+    public List<PostResponse> searchPostsByTitleOrContent(String query) {
+    List<Post> posts = postRepository.searchByTitleOrContentWithJoins(query);
+    // Map posts to PostResponse as you do in getAllPosts()
+        return posts.stream()
+               .map(this::mapToResponse)
+               .toList();
+
     }
 
 
