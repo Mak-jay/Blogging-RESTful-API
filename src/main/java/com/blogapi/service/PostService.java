@@ -23,5 +23,13 @@ public interface PostService {
 
     PostResponse getPostBySlug(String slugName);
 
-    Object searchPostsByTitleOrContent(String query);
+    List<PostResponse> searchPostsByTitleOrContent(String query);
+
+    List<PostResponse> searchPostsByCategory(String categoryName);
+
+    List<PostResponse> searchPostsByTag(String tagName);
+
+    List<PostResponse> searchPostsByAuthor(String authorName);
+
+    List<PostResponse> searchPostsCombined(String query, String category, String tag, String author);
 }

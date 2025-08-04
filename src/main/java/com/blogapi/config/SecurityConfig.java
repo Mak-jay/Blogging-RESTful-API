@@ -1,18 +1,15 @@
 package com.blogapi.config;
 
-import com.blogapi.jwt.JwtAuthFilter;
-import com.blogapi.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +18,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import com.blogapi.jwt.JwtAuthFilter;
+import com.blogapi.service.CustomUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
@@ -28,14 +29,20 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthFilter jwtAuthFilter;
+    
+    @Autowired
+    private CorsConfigurationSource corsConfigurationSource;
 
-    //authorize incoming requests from different URLs and grant authority as per roles
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable()); // Optional for testing, required if using Postman etc.
-
-        http.authorizeHttpRequests(auth -> auth
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/blog/auth/**").permitAll()
+                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/info").permitAll()
 
                 // Public GETs (all authenticated users)
                 .requestMatchers(HttpMethod.GET, "/blog/posts/**", "/blog/comments/**")
@@ -46,19 +53,21 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/blog/posts/**").hasAnyRole("AUTHOR", "ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/blog/posts/**").hasAnyRole("AUTHOR", "ADMIN")
 
+                // Comment operations - all authenticated users can create, but only authors/admins can modify
+                .requestMatchers(HttpMethod.POST, "/blog/comments/**").hasAnyRole("USER", "AUTHOR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/blog/comments/**").hasAnyRole("USER", "AUTHOR", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/blog/comments/**").hasAnyRole("USER", "AUTHOR", "ADMIN")
+
                 // Admin access to other critical /blog endpoints
                 .requestMatchers("/blog/**").hasRole("ADMIN")
 
                 // Everything else must be authenticated
                 .anyRequest().authenticated()
-        );
-
-
-        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            )
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
     @Bean
     public UserDetailsService userDetailsService(){

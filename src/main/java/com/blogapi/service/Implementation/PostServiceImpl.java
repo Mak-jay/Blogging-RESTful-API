@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -32,6 +34,8 @@ import com.blogapi.service.PostService;
 
 @Service
 public class PostServiceImpl implements PostService {
+    private static final Logger logger = LoggerFactory.getLogger(PostServiceImpl.class);
+
     @Autowired
     private PostRepository postRepository;
     @Autowired
@@ -68,6 +72,9 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toSet())
                 : Set.of(); // avoid nulls
 
+        // Get comment count
+        Integer commentCount = post.getComments() != null ? post.getComments().size() : 0;
+
         return new PostResponse(
                 post.getId(),
                 post.getTitle(),
@@ -78,7 +85,8 @@ public class PostServiceImpl implements PostService {
                 post.getUpdatedAt(),
                 post.getUser() != null ? post.getUser().getUsername() : null,
                 post.getCategory() != null ? post.getCategory().getName() : null,
-                tagNames
+                tagNames,
+                commentCount
         );
     }
 
@@ -212,14 +220,54 @@ public class PostServiceImpl implements PostService {
     }
     @Override
     public List<PostResponse> searchPostsByTitleOrContent(String query) {
-    List<Post> posts = postRepository.searchByTitleOrContentWithJoins(query);
-    // Map posts to PostResponse as you do in getAllPosts()
+        logger.info("Searching posts by title or content with query: {}", query);
+        List<Post> posts = postRepository.searchByTitleOrContentWithJoins(query);
+        logger.info("Found {} posts matching query: {}", posts.size(), query);
         return posts.stream()
                .map(this::mapToResponse)
                .toList();
-
     }
 
+@Override
+public List<PostResponse> searchPostsByCategory(String categoryName) {
+    logger.info("Searching posts by category: {}", categoryName);
+    List<Post> posts = postRepository.findPostsByCategoryName(categoryName);
+    logger.info("Found {} posts in category: {}", posts.size(), categoryName);
+    return posts.stream()
+           .map(this::mapToResponse)
+           .toList();
+}
+
+@Override
+public List<PostResponse> searchPostsByTag(String tagName) {
+    logger.info("Searching posts by tag: {}", tagName);
+    List<Post> posts = postRepository.findPostsByTagName(tagName);
+    logger.info("Found {} posts with tag: {}", posts.size(), tagName);
+    return posts.stream()
+           .map(this::mapToResponse)
+           .toList(); 
+}
+
+@Override
+public List<PostResponse> searchPostsByAuthor(String authorName) {
+    logger.info("Searching posts by author: {}", authorName);
+    List<Post> posts = postRepository.findByAuthorUsername(authorName);
+    logger.info("Found {} posts by author: {}", posts.size(), authorName);
+    return posts.stream()
+           .map(this::mapToResponse)
+           .toList();
+}
+
+@Override
+public List<PostResponse> searchPostsCombined(String query, String category, String tag, String author) {
+    logger.info("Searching posts with combined criteria - query: {}, category: {}, tag: {}, author: {}", 
+                query, category, tag, author);
+    List<Post> posts = postRepository.findPostsByCombinedCriteria(query, category, tag, author);
+    logger.info("Found {} posts with combined criteria", posts.size());
+    return posts.stream()
+           .map(this::mapToResponse)
+           .toList();
+}
 
 }
 

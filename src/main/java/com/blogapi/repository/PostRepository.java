@@ -46,8 +46,32 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Optional<Post> findBySlugWithDetails(@Param("slug") String slugName);
 
     // In PostRepository.java
-    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.tags LEFT JOIN FETCH p.category WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.tags LEFT JOIN FETCH p.category LEFT JOIN FETCH p.user WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<Post> searchByTitleOrContentWithJoins(@Param("query") String query);
 
-    //List<Post> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(String query, String query2);
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.tags LEFT JOIN FETCH p.category LEFT JOIN FETCH p.user JOIN p.category c WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :categoryName, '%'))")
+    List<Post> findPostsByCategoryName(@Param("categoryName") String categoryName);
+
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.tags LEFT JOIN FETCH p.category LEFT JOIN FETCH p.user JOIN p.tags t WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :tagName, '%'))")
+    List<Post> findPostsByTagName(@Param("tagName") String tagName);
+
+    @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.tags LEFT JOIN FETCH p.category LEFT JOIN FETCH p.user WHERE LOWER(p.user.username) LIKE LOWER(CONCAT('%', :username, '%'))")
+    List<Post> findByAuthorUsername(@Param("username") String username);
+
+    @Query("""
+        SELECT DISTINCT p FROM Post p 
+        LEFT JOIN FETCH p.tags 
+        LEFT JOIN FETCH p.category 
+        LEFT JOIN FETCH p.user 
+        WHERE (:query IS NULL OR (LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.content) LIKE LOWER(CONCAT('%', :query, '%'))))
+        AND (:category IS NULL OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :category, '%')))
+        AND (:tag IS NULL OR EXISTS (SELECT 1 FROM p.tags t WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :tag, '%'))))
+        AND (:author IS NULL OR LOWER(p.user.username) LIKE LOWER(CONCAT('%', :author, '%')))
+        """)
+    List<Post> findPostsByCombinedCriteria(
+        @Param("query") String query,
+        @Param("category") String category,
+        @Param("tag") String tag,
+        @Param("author") String author
+    );
 }

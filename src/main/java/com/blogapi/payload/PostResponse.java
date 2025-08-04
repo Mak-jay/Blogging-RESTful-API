@@ -13,5 +13,6 @@ public record PostResponse(
         LocalDateTime updatedAt,
         String authorName,
         String categoryName,
-        Set<String> tagNames
+        Set<String> tagNames,
+        Integer commentCount
 ) {}
