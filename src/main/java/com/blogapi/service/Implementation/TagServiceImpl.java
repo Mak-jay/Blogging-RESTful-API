@@ -1,15 +1,17 @@
 package com.blogapi.service.Implementation;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.blogapi.exception.ResourceNotFoundException;
 import com.blogapi.model.Tag;
 import com.blogapi.payload.TagRequest;
 import com.blogapi.payload.TagResponse;
 import com.blogapi.repository.TagRepository;
 import com.blogapi.service.TagService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +46,7 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public void deleteTagById(Long id) {
-        Tag tag = tagRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
+        tagRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
         tagRepository.deleteById(id);
     }
 

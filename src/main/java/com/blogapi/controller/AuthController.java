@@ -11,7 +11,6 @@ import com.blogapi.payload.SignUpResponse;
 import com.blogapi.repository.UserRepository;
 import com.blogapi.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;

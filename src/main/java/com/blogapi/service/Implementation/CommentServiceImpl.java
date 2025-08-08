@@ -13,6 +13,7 @@ import com.blogapi.config.SecurityConfig;
 import com.blogapi.exception.ResourceNotFoundException;
 import com.blogapi.model.Comment;
 import com.blogapi.model.Post;
+import com.blogapi.model.ROLE_TYPE;
 import com.blogapi.model.User;
 import com.blogapi.payload.CommentRequest;
 import com.blogapi.payload.CommentResponse;
@@ -112,7 +113,8 @@ public class CommentServiceImpl implements CommentService {
         
         boolean isCommentAuthor = comment.getUser().getId().equals(currentUser.getId());
         boolean isPostAuthor = comment.getPost().getUser().getId().equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole().name().equals("ADMIN");
+        boolean isAdmin = currentUser.getRole() == ROLE_TYPE.ADMIN;
+
         
         if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
             throw new AccessDeniedException("You are not authorized to delete this comment.");
